@@ -20,8 +20,8 @@
 *.mod.c
 *.lst
 *.symtypes
-*.order
 *.elf
+*.bin
 *.tar
 *.gz
 *.bz2
@@ -67,7 +67,6 @@ Module.symvers
 !.gitignore
 !.mailmap
 !.cocciconfig
-!.github
 
 #
 # Generated include files
@@ -122,3 +121,12 @@ kernel/configs/android-*.cfg
 #Ignoring Android.bp link file
 #
 Android.bp
+
+/out
+/libufdt/
+/AnyKernel3
+/stock_32/
+/stock/
+/clang/
+*.zip
+build.log
