@@ -227,7 +227,7 @@ if [ -f "$kernel" ] && [ -f "$dtbo" ]; then
 		<b>BuildDate:</b> <code>$BUILD_DATE</code>
 		<b>Filename:</b> <code>$ZIPNAME</code>
 		<b>md5 checksum :</b> <code>$(md5sum "$ZIPNAME" | cut -d' ' -f1)</code>
-
+		
 		#olive #onc #kernel"
 
 		echo -e "$grn \n\n(i)          Send to telegram succesfully!\n $nocol"
