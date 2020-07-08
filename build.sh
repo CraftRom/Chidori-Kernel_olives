@@ -65,7 +65,11 @@ KERN_VER=$(echo "$(make kernelversion)")
 BUILD_DATE=$(date '+%Y-%m-%d  %H:%M')
 DEVICE="Redmi 8"
 KERNELNAME="Chidori-Kernel-$TYPE"
+if $miui; then
+ZIPNAME="Chidori-Kernel-MIUI-olive-$(date '+%Y%m%d%H%M')-$TYPE.zip"
+else
 ZIPNAME="Chidori-Kernel-olive-$(date '+%Y%m%d%H%M')-$TYPE.zip"
+fi
 TC_DIR="$HOME/toolchains/proton-clang"
 DEFCONFIG="olive-perf_defconfig"
 sed -i "1s/.*/CONFIG_LOCALVERSION=\"-${KERNELNAME}\"/g" arch/arm64/configs/$DEFCONFIG

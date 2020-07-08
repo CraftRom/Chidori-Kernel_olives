@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -7173,7 +7172,7 @@ free_bcn_miss_rate_req:
                {
                    case FW_UBSP_STATS:
                    {
-                       tSirUbspFwStats *stats =
+                       tSirUbspFwStats __maybe_unused *stats =
                                &fwStatsRsp->fwStatsData.ubspStats;
                        memcpy(fwStatsRsp, fw_stats_result,
                               sizeof(tSirFwStatsResult));
@@ -8700,6 +8699,13 @@ int __hdd_stop (struct net_device *dev)
 
    pAdapter->dev->wireless_handlers = NULL;
 
+   /*
+    * Upon wifi turn off, DUT has to flush the scan results so if
+    * this is the last cli iface, flush the scan database.
+    */
+   if (!hdd_is_cli_iface_up(pHddCtx))
+       sme_ScanFlushResult(pHddCtx->hHal, 0);
+
    EXIT();
    return 0;
 }
@@ -8942,7 +8948,7 @@ void hdd_full_pwr_cbk(void *callbackContext, eHalStatus status)
    hdd_context_t *pHddCtx = (hdd_context_t*)callbackContext;
 
    hddLog(VOS_TRACE_LEVEL_INFO_HIGH,"HDD full Power callback status = %d", status);
-   if(&pHddCtx->full_pwr_comp_var)
+   if(&pHddCtx->full_pwr_comp_var != NULL)
    {
       complete(&pHddCtx->full_pwr_comp_var);
    }
@@ -11241,8 +11247,10 @@ static void __hdd_sap_restart_handle(struct work_struct *work)
         wlan_hdd_restart_sap(sap_adapter);
         hdd_change_ch_avoidance_status(hdd_ctx, false);
     }
+#ifdef SAP_AUTH_OFFLOAD
     if (hdd_ctx->cfg_ini->enable_sap_auth_offload)
         wlan_hdd_restart_sap(sap_adapter);
+#endif
 }
 
 /**
@@ -12999,9 +13007,9 @@ void hdd_wlan_exit(hdd_context_t *pHddCtx)
    send_btc_nlink_msg(WLAN_MODULE_DOWN_IND, 0);
 
    hdd_close_tx_queues(pHddCtx);
+#ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
    wlan_free_fwr_mem_dump_buffer();
 
-#ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
    if (pHddCtx->cfg_ini->wlanLoggingEnable)
    {
        wlan_logging_sock_deactivate_svc();
@@ -13773,6 +13781,7 @@ void hdd_init_frame_logging_done(void *fwlogInitCbContext, tAniLoggingInitRsp *p
       return;
    }
 
+#ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
    /*Check feature supported by FW*/
    if(TRUE == sme_IsFeatureSupportedByFW(MEMORY_DUMP_SUPPORTED))
    {
@@ -13783,6 +13792,7 @@ void hdd_init_frame_logging_done(void *fwlogInitCbContext, tAniLoggingInitRsp *p
    {
       wlan_store_fwr_mem_dump_size(0);
    }
+#endif
 
 
 }
@@ -13968,7 +13978,8 @@ void wlan_hdd_defer_scan_init_work(hdd_context_t *pHddCtx,
         pHddCtx->scan_ctxt.attempt = 0;
         pHddCtx->scan_ctxt.magic = TDLS_CTX_MAGIC;
     }
-    schedule_delayed_work(&pHddCtx->scan_ctxt.scan_work, delay);
+    queue_delayed_work(system_freezable_power_efficient_wq,
+                          &pHddCtx->scan_ctxt.scan_work, delay);
 }
 
 void wlan_hdd_init_deinit_defer_scan_context(scan_context_t *scan_ctx)
@@ -14423,6 +14434,22 @@ int hdd_wlan_startup(struct device *dev )
    {
       eHalStatus halStatus;
 
+      /* Overwrite the Mac address if config file exist */
+      if (VOS_STATUS_SUCCESS != hdd_update_mac_config(pHddCtx))
+      {
+         hddLog(VOS_TRACE_LEVEL_WARN,
+                "%s: Didn't overwrite MAC from config file",
+                __func__);
+      } else {
+         pr_info("%s: WLAN Mac Addr from config: %02X:%02X:%02X:%02X:%02X:%02X\n", WLAN_MODULE_NAME,
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[0],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[1],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[2],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[3],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[4],
+                 pHddCtx->cfg_ini->intfMacAddr[0].bytes[5]);
+      }
+
       /* Set the MAC Address Currently this is used by HAL to
        * add self sta. Remove this once self sta is added as
        * part of session open.
@@ -14802,10 +14829,9 @@ int hdd_wlan_startup(struct device *dev )
        hddLog(VOS_TRACE_LEVEL_INFO, FL("Logging disabled in ini"));
    }
 
-#endif
-
    if (vos_is_multicast_logging())
        wlan_logging_set_log_level();
+#endif
 
    hdd_register_mcast_bcast_filter(pHddCtx);
 
@@ -14934,8 +14960,8 @@ int hdd_wlan_startup(struct device *dev )
    wcnss_update_bt_profile();
    goto success;
 
-err_open_cesium_nl_sock:
 #ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
+err_open_cesium_nl_sock:
    hdd_close_cesium_nl_sock();
 #endif
 
@@ -15666,11 +15692,11 @@ wlan_hdd_is_GO_power_collapse_allowed (hdd_context_t* pHddCtx)
                  FL("GO started"));
           return TRUE;
      }
-     else
-          /* wait till GO changes its interface to p2p device */
-          hddLog(VOS_TRACE_LEVEL_INFO,
-                 FL("Del_bss called, avoid apps suspend"));
-          return FALSE;
+
+     /* wait till GO changes its interface to p2p device */
+     hddLog(VOS_TRACE_LEVEL_INFO,
+            FL("Del_bss called, avoid apps suspend"));
+     return FALSE;
 
 }
 /* Decide whether to allow/not the apps power collapse. 
@@ -16311,6 +16337,7 @@ VOS_STATUS hdd_issta_p2p_clientconnected(hdd_context_t *pHddCtx)
 }
 
 
+#ifdef WLAN_LOGGING_SOCK_SVC_ENABLE
 /*
  * API to find if the firmware will send logs using DXE channel
  */
@@ -16338,6 +16365,7 @@ v_U8_t hdd_is_fw_ev_logging_enabled(void)
     return (pHddCtx && pHddCtx->cfg_ini->wlanLoggingEnable &&
             pHddCtx->cfg_ini->enableFWLogging);
 }
+#endif
 
 /*
  * API to find if there is any session connected
