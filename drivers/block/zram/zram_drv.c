@@ -1995,6 +1995,10 @@ static int zram_add(void)
 
 	zram_debugfs_register(zram);
 	pr_info("Added device: %s\n", zram->disk->disk_name);
+
+	pr_info("Resetting zram bdev");
+	reset_bdev(zram);
+
 	return device_id;
 
 out_free_queue:
