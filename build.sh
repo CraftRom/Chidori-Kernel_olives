@@ -138,7 +138,7 @@ fi
 push_message() {
     curl -s -X POST \
         https://api.telegram.org/bot1472514287:AAG9kYDURtPvQLM9RXN_zv4h79CIbRCPuPw/sendMessage \
-        -d chat_id="-1001452770277" \
+        -d chat_id="-1001209604560" \
         -d text="$1" \
         -d "parse_mode=html" \
         -d "disable_web_page_preview=true"
@@ -147,7 +147,7 @@ push_message() {
 push_document() {
     curl -s -X POST \
         https://api.telegram.org/bot1472514287:AAG9kYDURtPvQLM9RXN_zv4h79CIbRCPuPw/sendDocument \
-        -F chat_id="-1001452770277" \
+        -F chat_id="-1001209604560" \
         -F document=@"$1" \
         -F caption="$2" \
         -F "parse_mode=html" \
@@ -228,7 +228,7 @@ if [ -f "$kernel" ] && [ -f "$dtbo" ]; then
 		<b>Filename:</b> <code>$ZIPNAME</code>
 		<b>md5 checksum :</b> <code>$(md5sum "$ZIPNAME" | cut -d' ' -f1)</code>
 		
-		#olive #onc #kernel"
+		#olive #kernel"
 
 		echo -e "$grn \n\n(i)          Send to telegram succesfully!\n $nocol"
 	fi
@@ -237,6 +237,7 @@ if [ -f "$kernel" ] && [ -f "$dtbo" ]; then
 	sed -i "51s/-experimental//" arch/arm64/configs/$DEFCONFIG
 else
 	echo -e "$red \nKernel Compilation failed! Fix the errors!\n $nocol"
+		sleep 2.5
 	# Push message if build error
 	push_message "$BUILDER! <b>Failed building kernel for <code>$DEVICE</code> Please fix it...!</b>"
 	exit 1
