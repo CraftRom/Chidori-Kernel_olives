@@ -645,7 +645,7 @@ static int wlan_hdd_p2p_start_remain_on_channel(
             return -EINVAL;
         }
 
-        if( REMAIN_ON_CHANNEL_REQUEST == request_type)
+	if( REMAIN_ON_CHANNEL_REQUEST == request_type)
         {
             if( eHAL_STATUS_SUCCESS != sme_RegisterMgmtFrame(
                         WLAN_HDD_GET_HAL_CTX(pAdapter),
@@ -654,7 +654,7 @@ static int wlan_hdd_p2p_start_remain_on_channel(
             {
                 hddLog(VOS_TRACE_LEVEL_ERROR,    "sme_RegisterMgmtFrame returned fail");
             }
-        }
+	}
 
     }
     else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
@@ -2824,7 +2824,6 @@ void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
              return;
          }
     }
-
 
     if (NULL == pAdapter->dev)
     {

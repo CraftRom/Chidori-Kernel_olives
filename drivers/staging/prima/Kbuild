@@ -22,9 +22,6 @@ CONFIG_PRIMA_WLAN_LFR := y
 # Flag to enable SAE
 CONFIG_WLAN_FEATURE_SAE := y
 
-# Flag to enable SW PTA
-CONFIG_WLAN_FEATURE_SW_PTA := y
-
 # Flag to enable OWE
 CONFIG_WLAN_AKM_SUITE_OWE := y
 
@@ -63,9 +60,6 @@ CONFIG_WLAN_FEATURE_HOLD_RX_WAKELOCK := n
 # Flag to enable AP Find feature
 CONFIG_WLAN_FEATURE_AP_FIND := y
 
-#Flag to enable hold RX wake lock feature
-CONFIG_WLAN_FEATURE_HOLD_RX_WAKELOCK := n
-
 # Flag to enable feature Software AP Authentication Offload
 SAP_AUTH_OFFLOAD := y
 
@@ -87,7 +81,7 @@ BUILD_DEBUG_VERSION := 0
 #Enable this flag to build driver in diag version
 BUILD_DIAG_VERSION := 1
 
-# Do we panic on bug?  default is to warn
+#Do we panic on bug?  default is to warn
 PANIC_ON_BUG := 0
 
 #Re-enable wifi on WDI timeout
@@ -704,10 +698,6 @@ ifeq ($(CONFIG_WLAN_FEATURE_SAE),y)
 CDEFINES += -DWLAN_FEATURE_SAE
 endif
 
-ifeq ($(CONFIG_WLAN_FEATURE_SW_PTA),y)
-CDEFINES += -DFEATURE_WLAN_SW_PTA
-endif
-
 ifeq ($(CONFIG_WLAN_AKM_SUITE_OWE),y)
 CDEFINES += -DWLAN_AKM_SUITE_OWE
 endif
@@ -785,7 +775,7 @@ EXTRA_CFLAGS += $(call cc-disable-warning, maybe-uninitialized)
 
 # Silence Clang warning
 EXTRA_CFLAGS += $(call cc-disable-warning, enum-conversion)
-EXTRA_CFLAGS += $(call cc-option, -Wframe-larger-than=2048)
+EXTRA_CFLAGS += $(call cc-disable-warning, void-pointer-to-enum-cast)
 
 ifeq ($(CONFIG_WLAN_OFFLOAD_PACKETS),y)
 CDEFINES += -DWLAN_FEATURE_OFFLOAD_PACKETS

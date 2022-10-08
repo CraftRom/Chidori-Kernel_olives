@@ -673,10 +673,10 @@ limCheckMgmtRegisteredFrames(tpAniSirGlobal pMac, tANI_U8 *pBd,
         pLimMgmtRegistration = pNext;
         pNext = NULL;
     }
-   
+
     if (match)
     {
-        limLog( pMac, LOG1, 
+	limLog( pMac, LOG1,
                 FL("rcvd frame match with registered frame params"));
 
         /* Indicate this to SME */
